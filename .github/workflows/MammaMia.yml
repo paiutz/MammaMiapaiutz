@@ -3,7 +3,6 @@ name: Build MammaMiapaiutz EXE
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
 
 jobs:
   build:
@@ -26,24 +25,27 @@ jobs:
     - name: 🔨 Build EXE with PyInstaller
       shell: pwsh
       run: |
+        # Path to dateparser data
         $dataPath = & python -c "import dateparser, os; print(os.path.join(os.path.dirname(dateparser.__file__), 'data'))"
 
+        # Build cert args if cert folder exists
+        $certArgs = ""
         if (Test-Path "cert") {
-          echo "✅ Including cert folder"
-          pyinstaller launcher.py `
-            --onefile `
-            --name MammaMiapaiutz `
-            --add-data "$dataPath;dateparser/data" `
-            --add-data "cert;cert" `
-            --hidden-import dateparser
+          echo "✅ Found cert folder. Including in EXE"
+          $certArgs = '--add-data "cert;cert"'
         } else {
           echo "⚠️ cert folder not found. Building without SSL certs"
-          pyinstaller launcher.py `
-            --onefile `
-            --name MammaMiapaiutz `
-            --add-data "$dataPath;dateparser/data" `
-            --hidden-import dateparser
         }
+
+        # Ensure config.json is bundled
+        if (-Not (Test-Path "config.json")) {
+          echo "❌ Missing config.json. Build will fail."
+          exit 1
+        }
+
+        $cmd = "pyinstaller launcher.py --onefile --name MammaMiapaiutz --add-data `"$dataPath;dateparser/data`" --add-data `"config.json;.`" --hidden-import dateparser $certArgs"
+        echo "🔧 Executing: $cmd"
+        Invoke-Expression $cmd
 
     - name: 📤 Upload EXE Artifact
       uses: actions/upload-artifact@v4
