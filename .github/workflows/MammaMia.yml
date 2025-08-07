@@ -9,19 +9,20 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - name: 🧾 Checkout Code
+      uses: actions/checkout@v4
 
-    - name: Set up Python
+    - name: 🐍 Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
 
-    - name: Install dependencies
+    - name: 📦 Install dependencies
       run: |
         pip install -r requirements.txt
         pip install pyinstaller
 
-    - name: Build EXE with PyInstaller
+    - name: 🔨 Build EXE with PyInstaller
       run: |
         $dataPath = python -c "import dateparser, os; print(os.path.join(os.path.dirname(dateparser.__file__), 'data'))"
         pyinstaller launcher.py --onefile --name MammaMiapaiutz `
@@ -29,8 +30,8 @@ jobs:
           --add-data "cert;cert" `
           --hidden-import dateparser
 
-    - name: Upload EXE
-      uses: actions/upload-artifact@v3
+    - name: 📤 Upload EXE Artifact
+      uses: actions/upload-artifact@v4
       with:
         name: MammaMiapaiutz
         path: dist/MammaMiapaiutz.exe
