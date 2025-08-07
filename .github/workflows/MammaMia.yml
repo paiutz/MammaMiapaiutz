@@ -1,34 +1,36 @@
-name: Build EXE for MammaMiapaiutz
+name: Build MammaMiapaiutz EXE
 
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
 
 jobs:
-  build-windows:
+  build:
     runs-on: windows-latest
 
     steps:
-    - name: 📥 Checkout code
-      uses: actions/checkout@v3
+    - uses: actions/checkout@v3
 
-    - name: 🐍 Set up Python
+    - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: 3.11
+        python-version: '3.11'
 
-    - name: 📦 Install dependencies
+    - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install pyinstaller python-dotenv fastapi uvicorn bs4 tmdbv3api dateparser tzdata lxml slowapi curl_cffi fake-headers
+        pip install -r requirements.txt
+        pip install pyinstaller
 
-    - name: ⚙️ Build EXE with launcher.py
+    - name: Build EXE with PyInstaller
       run: |
-        pyinstaller --onefile --name MammaMiapaiutz launcher.py
+        $dataPath = python -c "import dateparser, os; print(os.path.join(os.path.dirname(dateparser.__file__), 'data'))"
+        pyinstaller launcher.py --onefile --name MammaMiapaiutz `
+          --add-data "$dataPath;dateparser/data" `
+          --add-data "cert;cert" `
+          --hidden-import dateparser
 
-    - name: 📤 Upload EXE artifact
-      uses: actions/upload-artifact@v4
+    - name: Upload EXE
+      uses: actions/upload-artifact@v3
       with:
-        name: MammaMiapaiutz-exe
+        name: MammaMiapaiutz
         path: dist/MammaMiapaiutz.exe
