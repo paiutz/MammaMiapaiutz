@@ -1,4 +1,4 @@
-name: Build Windows EXE with .env, logging, and SSL
+name: Build EXE for MammaMiapaiutz
 
 on:
   push:
@@ -10,62 +10,25 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v3
+    - name: 📥 Checkout code
+      uses: actions/checkout@v3
 
-      - name: 🐍 Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.11
 
-      - name: 📦 Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pyinstaller python-dotenv uvicorn
+    - name: 📦 Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller python-dotenv fastapi uvicorn bs4 tmdbv3api dateparser tzdata lxml slowapi curl_cffi fake-headers
 
-      - name: 📝 Create launcher.py with SSL and logging
-        run: |
-          echo. > launcher.py
-          echo import os >> launcher.py
-          echo import shutil >> launcher.py
-          echo import uvicorn >> launcher.py
-          echo from dotenv import load_dotenv >> launcher.py
-          echo from datetime import datetime >> launcher.py
-          echo base_dir = os.path.dirname(os.path.abspath(__file__)) >> launcher.py
-          echo env_path = os.path.join(base_dir, ".env") >> launcher.py
-          echo log_path = os.path.join(base_dir, "log.txt") >> launcher.py
-          echo log_max_size = 1 * 1024 * 1024 >> launcher.py
-          echo def log(message): >> launcher.py
-          echo.    timestamp = datetime.now().strftime("[%Y-%m-%d %H:%M:%S]") >> launcher.py
-          echo.    with open(log_path, "a", encoding="utf-8") as f: f.write(f"{timestamp} {message}\\n") >> launcher.py
-          echo if os.path.exists(log_path) and os.path.getsize(log_path) > log_max_size: >> launcher.py
-          echo.    backup = log_path.replace(".txt", f"_{datetime.now().strftime('%%Y%%m%%d_%%H%%M%%S')}.bak") >> launcher.py
-          echo.    shutil.move(log_path, backup) >> launcher.py
-          echo.    log(f"Log rotated to {backup}") >> launcher.py
-          echo log("MammaMiapaiutz.exe started") >> launcher.py
-          echo if os.path.exists(env_path): load_dotenv(env_path); log(".env loaded successfully") >> launcher.py
-          echo else: log("WARNING: .env file not found") >> launcher.py
-          echo for var in ["TMDB_KEY", "PORT", "HOST", "DEBUG", "ENV"]: >> launcher.py
-          echo.    val = os.environ.get(var) >> launcher.py
-          echo.    log(f"{var} = {val}" if val else f"WARNING: {var} not set in environment") >> launcher.py
-          echo host = os.environ.get("HOST", "0.0.0.0") >> launcher.py
-          echo port = int(os.environ.get("PORT", "7000")) >> launcher.py
-          echo certfile = os.path.join(base_dir, "cert.pem") >> launcher.py
-          echo keyfile = os.path.join(base_dir, "key.pem") >> launcher.py
-          echo use_ssl = os.path.exists(certfile) and os.path.exists(keyfile) >> launcher.py
-          echo log("SSL certificates found: using HTTPS" if use_ssl else "SSL certificates not found: using HTTP") >> launcher.py
-          echo try: >> launcher.py
-          echo.    import run >> launcher.py
-          echo.    uvicorn.run(run.app, host=host, port=port, ssl_certfile=certfile if use_ssl else None, ssl_keyfile=keyfile if use_ssl else None) >> launcher.py
-          echo except Exception as e: log(f"ERROR: Failed to run app: {e}"); raise >> launcher.py
+    - name: ⚙️ Build EXE with launcher.py
+      run: |
+        pyinstaller --onefile --name MammaMiapaiutz launcher.py
 
-      - name: 🔨 Build EXE with PyInstaller
-        run: |
-          pyinstaller --onefile --name "MammaMiapaiutz" launcher.py
-
-      - name: 📤 Upload EXE artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: MammaMiapaiutz-exe
-          path: dist/MammaMiapaiutz.exe
+    - name: 📤 Upload EXE artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: MammaMiapaiutz-exe
+        path: dist/MammaMiapaiutz.exe
