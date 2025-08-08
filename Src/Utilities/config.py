@@ -1,8 +1,22 @@
 #LOAD THE CONFIG
 import json
+import os
+import sys
+
+
+def get_project_root_for_config() -> str:
+    # When bundled with PyInstaller, resources are in sys._MEIPASS
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        return sys._MEIPASS
+    # When running from source, config.json is at project root two levels up from this file
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+
+
+# Resolve the configuration file path
+CONFIG_PATH = os.path.join(get_project_root_for_config(), 'config.json')
 
 # Open the configuration file
-with open('config.json') as f:
+with open(CONFIG_PATH, encoding='utf-8') as f:
     # Load JSON data from file
     config = json.load(f)
 
